@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jogo do Impostor</title>
+<meta name="description" content="Jogo do impostor para jogar com amigos passando um celular só. 3 a 15 jogadores, várias categorias e modos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --noite:#171227;
+    --noite-2:#221a38;
+    --carta:#2c2245;
+    --linha:#3d3059;
+    --holofote:#ffc24b;
+    --civil:#6fe3b2;
+    --impostor:#ff5d73;
+    --texto:#f4efe4;
+    --texto-fraco:#b2a7c6;
+    --raio:18px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--noite);
+    color:var(--texto);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-size:16px;line-height:1.55;
+    min-height:100dvh;
+    -webkit-font-smoothing:antialiased;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  h1,h2,h3{font-family:"Bricolage Grotesque","Inter",sans-serif;font-weight:800;line-height:1.05;margin:0}
+  .wrap{max-width:560px;margin:0 auto;padding:22px 18px 48px}
+  .tela{display:none;animation:entra .22s ease}
+  .tela.ativa{display:block}
+  @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.tela{animation:none}*{transition:none!important}}
+
+  .marca{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+  .marca h1{font-size:clamp(34px,10vw,46px);letter-spacing:-.03em}
+  .marca h1 span{color:var(--holofote)}
+  .sub{color:var(--texto-fraco);font-size:14px;margin:0 0 22px}
+
+  .bloco{background:var(--noite-2);border:1px solid var(--linha);border-radius:var(--raio);padding:16px;margin-bottom:14px}
+  .bloco h2{font-size:17px;margin-bottom:4px}
+  .ajuda{color:var(--texto-fraco);font-size:13px;margin:2px 0 12px}
+
+  .contador{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .contador .valor{font-family:"Bricolage Grotesque",sans-serif;font-size:40px;font-weight:800;min-width:56px;text-align:center}
+  .redondo{width:48px;height:48px;border-radius:50%;border:1px solid var(--linha);background:var(--carta);color:var(--texto);font-size:24px;cursor:pointer}
+  .redondo:active{transform:scale(.94)}
+  .redondo:disabled{opacity:.35;cursor:not-allowed}
+
+  .nomes{display:grid;gap:8px;margin-top:14px}
+  .nomes input{
+    width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--linha);
+    background:var(--carta);color:var(--texto);font:inherit;font-size:15px
+  }
+  .nomes input:focus,textarea:focus{outline:2px solid var(--holofote);outline-offset:1px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    padding:9px 14px;border-radius:999px;border:1px solid var(--linha);background:var(--carta);
+    color:var(--texto-fraco);font:inherit;font-size:14px;cursor:pointer
+  }
+  .chip[aria-pressed="true"]{background:var(--holofote);border-color:var(--holofote);color:#2a1d00;font-weight:600}
+
+  .opcao{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--linha)}
+  .opcao:first-of-type{border-top:0}
+  .opcao label{flex:1;font-size:15px;cursor:pointer}
+  .opcao label small{display:block;color:var(--texto-fraco);font-size:12.5px;line-height:1.4}
+  .opcao input[type=checkbox]{width:22px;height:22px;accent-color:var(--holofote);margin-top:2px;flex:none}
+
+  select,textarea{
+    width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--linha);
+    background:var(--carta);color:var(--texto);font:inherit;font-size:15px
+  }
+  textarea{min-height:84px;resize:vertical}
+
+  .btn{
+    display:block;width:100%;padding:17px;border:0;border-radius:14px;cursor:pointer;
+    font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:18px;letter-spacing:-.01em;
+    background:var(--holofote);color:#2a1d00;margin-top:8px
+  }
+  .btn:active{transform:scale(.985)}
+  .btn.fantasma{background:transparent;color:var(--texto);border:1px solid var(--linha)}
+  .btn.perigo{background:var(--impostor);color:#37000a}
+  .btn:focus-visible,.chip:focus-visible,.redondo:focus-visible{outline:2px solid var(--holofote);outline-offset:3px}
+
+  /* carta de revelação */
+  .carta{
+    position:relative;border-radius:24px;border:1px solid var(--linha);background:var(--carta);
+    min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:28px;cursor:pointer;overflow:hidden
+  }
+  .carta.aberta{background:radial-gradient(120% 90% at 50% 0%,#3a2c5c 0%,var(--carta) 70%)}
+  .carta .quem{font-family:"Bricolage Grotesque",sans-serif;font-size:30px;font-weight:800;margin-bottom:6px}
+  .carta .dica{color:var(--texto-fraco);font-size:14px}
+  .palavra{font-family:"Bricolage Grotesque",sans-serif;font-size:clamp(34px,11vw,52px);font-weight:800;line-height:1.05;letter-spacing:-.03em}
+  .papel{font-size:13px;letter-spacing:.02em;margin-bottom:10px;color:var(--texto-fraco)}
+  .papel.imp{color:var(--impostor)}
+  .papel.civ{color:var(--civil)}
+  .progresso{color:var(--texto-fraco);font-size:13px;text-align:center;margin:12px 0}
+
+  .relogio{font-family:"Bricolage Grotesque",sans-serif;font-size:64px;font-weight:800;text-align:center;letter-spacing:-.02em}
+  .relogio.acabando{color:var(--impostor)}
+  .ordem{list-style:none;padding:0;margin:10px 0 0;counter-reset:fala}
+  .ordem li{
+    display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--linha);font-size:16px
+  }
+  .ordem li:last-child{border-bottom:0}
+  .ordem li::before{
+    counter-increment:fala;content:counter(fala);width:26px;height:26px;flex:none;border-radius:50%;
+    background:var(--carta);border:1px solid var(--linha);display:grid;place-items:center;font-size:13px;color:var(--texto-fraco)
+  }
+  .ordem li:first-child::before{background:var(--holofote);border-color:var(--holofote);color:#2a1d00;font-weight:700}
+
+  .lista-voto{display:grid;gap:8px;margin-top:12px}
+  .lista-voto button{
+    width:100%;text-align:left;padding:15px;border-radius:12px;border:1px solid var(--linha);
+    background:var(--carta);color:var(--texto);font:inherit;font-size:16px;cursor:pointer
+  }
+  .placar{display:flex;gap:10px;margin-top:14px}
+  .placar div{flex:1;background:var(--noite-2);border:1px solid var(--linha);border-radius:14px;padding:12px;text-align:center}
+  .placar strong{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:28px}
+  .placar span{font-size:12.5px;color:var(--texto-fraco)}
+  .resultado{text-align:center;padding:8px 0 4px}
+  .resultado .titulo{font-family:"Bricolage Grotesque",sans-serif;font-size:30px;font-weight:800;margin-bottom:6px}
+  .quemera{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+  .tag{padding:7px 12px;border-radius:999px;font-size:14px;background:rgba(255,93,115,.14);color:var(--impostor);border:1px solid rgba(255,93,115,.35)}
+  .aviso{background:rgba(255,194,75,.1);border:1px solid rgba(255,194,75,.35);color:var(--holofote);border-radius:12px;padding:11px 13px;font-size:13.5px;margin-top:10px}
+  .rodape{color:var(--texto-fraco);font-size:12.5px;text-align:center;margin-top:26px;line-height:1.6}
+  .esconde{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ CONFIGURAÇÃO ============ -->
+<section id="tela-setup" class="tela ativa">
+  <div class="marca"><h1>Jogo do <span>Impostor</span></h1></div>
+  <p class="sub">Um celular só, passando de mão em mão. Todo mundo recebe a mesma palavra — menos o impostor.</p>
+
+  <div class="bloco">
+    <h2>Jogadores</h2>
+    <p class="ajuda">De 3 a 15 pessoas.</p>
+    <div class="contador">
+      <button class="redondo" id="menos-jog" aria-label="Menos jogadores">−</button>
+      <div class="valor" id="qtd-jog">5</div>
+      <button class="redondo" id="mais-jog" aria-label="Mais jogadores">+</button>
+    </div>
+    <div class="nomes" id="lista-nomes"></div>
+  </div>
+
+  <div class="bloco">
+    <h2>Impostores</h2>
+    <p class="ajuda">Com 7 ou mais pessoas, 2 impostores deixa o jogo mais equilibrado.</p>
+    <div class="contador">
+      <button class="redondo" id="menos-imp" aria-label="Menos impostores">−</button>
+      <div class="valor" id="qtd-imp">1</div>
+      <button class="redondo" id="mais-imp" aria-label="Mais impostores">+</button>
+    </div>
+  </div>
+
+  <div class="bloco">
+    <h2>Categorias</h2>
+    <p class="ajuda">Escolha uma ou várias. Nenhuma selecionada = sorteia de todas.</p>
+    <div class="chips" id="chips-cat"></div>
+    <details style="margin-top:14px">
+      <summary style="cursor:pointer;color:var(--texto-fraco);font-size:14px">Usar minhas próprias palavras</summary>
+      <textarea id="palavras-custom" placeholder="Uma palavra por linha ou separadas por vírgula" style="margin-top:10px"></textarea>
+      <p class="ajuda" style="margin-bottom:0">Se você preencher aqui, o jogo usa só essas palavras.</p>
+    </details>
+  </div>
+
+  <div class="bloco">
+    <h2>Regras da partida</h2>
+    <p class="ajuda"></p>
+    <div class="opcao">
+      <input type="checkbox" id="op-dica" checked>
+      <label for="op-dica">Impostor vê a categoria<small>Ele sabe que o assunto é "Comidas", mas não a palavra.</small></label>
+    </div>
+    <div class="opcao">
+      <input type="checkbox" id="op-conhecem">
+      <label for="op-conhecem">Impostores se conhecem<small>Só faz diferença com 2 ou mais impostores.</small></label>
+    </div>
+    <div class="opcao">
+      <input type="checkbox" id="op-misterio">
+      <label for="op-misterio">Modo mistério<small>O impostor recebe outra palavra e nem sabe que é o impostor.</small></label>
+    </div>
+    <div class="opcao">
+      <input type="checkbox" id="op-caos">
+      <label for="op-caos">Modo caos<small>De vez em quando a rodada não tem impostor nenhum.</small></label>
+    </div>
+    <div class="opcao" style="display:block">
+      <label for="op-tempo" style="display:block;margin-bottom:8px">Tempo de discussão</label>
+      <select id="op-tempo">
+        <option value="0">Sem cronômetro</option>
+        <option value="60">1 minuto</option>
+        <option value="120">2 minutos</option>
+        <option value="180" selected>3 minutos</option>
+        <option value="300">5 minutos</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn" id="btn-comecar">Começar partida</button>
+  <p class="rodape">Cada jogador diz uma palavra ligada ao segredo. Depois vocês discutem e acusam alguém.</p>
+</section>
+
+<!-- ============ DISTRIBUIÇÃO ============ -->
+<section id="tela-carta" class="tela">
+  <p class="progresso" id="progresso-carta">Jogador 1 de 5</p>
+  <div class="carta" id="carta" role="button" tabindex="0" aria-live="polite">
+    <div id="carta-fechada">
+      <div class="quem" id="nome-da-vez">Ana</div>
+      <p class="dica">Só você pode ver. Toque para abrir.</p>
+    </div>
+    <div id="carta-aberta" class="esconde">
+      <div class="papel" id="papel-txt">Sua palavra secreta</div>
+      <div class="palavra" id="palavra-txt">Feijoada</div>
+      <p class="dica" id="dica-txt"></p>
+    </div>
+  </div>
+  <button class="btn esconde" id="btn-proximo">Já vi, passar o celular</button>
+  <p class="rodape">Ninguém pode ver a tela de outra pessoa. Se alguém abrir errado, use "recomeçar" na tela final.</p>
+</section>
+
+<!-- ============ DISCUSSÃO ============ -->
+<section id="tela-jogo" class="tela">
+  <h2 style="font-size:24px;margin-bottom:4px">Hora de falar</h2>
+  <p class="sub" style="margin-bottom:16px">Cada um diz <strong>uma palavra só</strong>, nessa ordem. Depois discutam à vontade.</p>
+
+  <div class="bloco" id="bloco-relogio">
+    <div class="relogio" id="relogio">3:00</div>
+    <button class="btn fantasma" id="btn-timer" style="margin-top:12px">Pausar</button>
+  </div>
+
+  <div class="bloco">
+    <h2>Ordem de fala</h2>
+    <ol class="ordem" id="ordem-fala"></ol>
+  </div>
+
+  <button class="btn" id="btn-votar">Ir para a acusação</button>
+</section>
+
+<!-- ============ VOTAÇÃO ============ -->
+<section id="tela-voto" class="tela">
+  <h2 style="font-size:24px;margin-bottom:4px">Quem é o impostor?</h2>
+  <p class="sub">Contem os votos em voz alta e toquem no nome mais votado.</p>
+  <div class="lista-voto" id="lista-voto"></div>
+  <button class="btn fantasma" id="btn-pular-voto" style="margin-top:14px">Ninguém foi acusado, revelar</button>
+</section>
+
+<!-- ============ RESULTADO ============ -->
+<section id="tela-fim" class="tela">
+  <div class="bloco">
+    <div class="resultado">
+      <div class="titulo" id="titulo-fim">Pegaram o impostor!</div>
+      <p class="sub" id="detalhe-fim" style="margin:0"></p>
+      <div style="margin-top:18px">
+        <p class="papel">A palavra era</p>
+        <div class="palavra" id="palavra-final">Feijoada</div>
+      </div>
+      <div class="quemera" id="quem-era"></div>
+    </div>
+    <div id="caixa-chute" class="esconde">
+      <div class="aviso">O impostor ainda pode virar o jogo: ele tem uma chance de adivinhar a palavra em voz alta.</div>
+      <button class="btn" id="btn-acertou">Ele acertou a palavra</button>
+      <button class="btn fantasma" id="btn-errou">Errou, civis vencem</button>
+    </div>
+  </div>
+
+  <div class="placar">
+    <div><strong id="pts-civis">0</strong><span>Civis</span></div>
+    <div><strong id="pts-imp">0</strong><span>Impostores</span></div>
+  </div>
+
+  <button class="btn" id="btn-nova">Nova rodada, mesmo grupo</button>
+  <button class="btn fantasma" id="btn-reconfig">Mudar jogadores e regras</button>
+</section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- BANCO DE PALAVRAS ---------- */
+  var CATEGORIAS = {
+    "Lugares":["Praia","Aeroporto","Hospital","Escola","Cinema","Padaria","Academia","Igreja","Zoológico","Estádio","Shopping","Estação de metrô","Farmácia","Banco","Cemitério","Circo","Barbearia","Posto de gasolina","Biblioteca","Churrascaria","Hotel","Delegacia","Feira livre","Parque aquático","Lava-jato","Cartório","Rodoviária","Balada","Camping","Museu"],
+    "Comidas":["Pizza","Feijoada","Coxinha","Açaí","Brigadeiro","Pastel","Churrasco","Lasanha","Pão de queijo","Sushi","Hambúrguer","Tapioca","Pipoca","Farofa","Cuscuz","Sorvete","Strogonoff","Mortadela","Pamonha","Bolo de cenoura","Pudim","Miojo","Milkshake","Espetinho","Torta de limão","Salgadinho","Canjica","Arroz carreteiro","Mandioca frita","Bauru"],
+    "Animais":["Capivara","Tubarão","Pinguim","Formiga","Girafa","Morcego","Cavalo","Polvo","Abelha","Papagaio","Jacaré","Tartaruga","Camelo","Ouriço","Lhama","Golfinho","Coruja","Besouro","Tatu","Preguiça","Onça","Pombo","Minhoca","Canguru","Galinha","Bode","Piranha","Rato","Cobra","Sapo"],
+    "Profissões":["Dentista","Piloto","Pedreiro","Professor","Bombeiro","Juiz de futebol","Padre","Motorista de app","Cabeleireiro","Enfermeiro","Fotógrafo","Palhaço","Segurança","Garçom","Veterinário","Advogado","Mecânico","Caixa de mercado","Entregador","Salva-vidas","DJ","Costureira","Jardineiro","Pescador","Astronauta","Detetive","Personal trainer","Carteiro","Açougueiro","Síndico"],
+    "Objetos":["Guarda-chuva","Liquidificador","Escova de dente","Ventilador","Chinelo","Carregador","Óculos escuros","Vassoura","Espelho","Cadeado","Fone de ouvido","Panela de pressão","Cortador de unha","Controle remoto","Isqueiro","Mochila","Bicicleta","Tesoura","Colchão","Máquina de lavar","Extintor","Chaveiro","Régua","Batom","Micro-ondas","Balança","Pincel","Tapete","Cafeteira","Álbum de figurinhas"],
+    "Futebol":["Pênalti","Goleiro","Cartão vermelho","Escanteio","Impedimento","Bandeirinha","Torcida","Maracanã","Camisa 10","Bola murcha","Trave","Chuteira","Falta","Bicicleta","Time de várzea","VAR","Copa do Mundo","Vestiário","Narrador","Treinador","Reserva","Uniforme","Arquibancada","Clássico","Pelada de domingo","Gol contra","Artilheiro","Apito","Rebaixamento","Cambista"],
+    "Filmes e séries":["Titanic","Jurassic Park","Round 6","Harry Potter","Tropa de Elite","Cidade de Deus","Stranger Things","O Rei Leão","Os Vingadores","A Fazenda","Big Brother","Toy Story","Velozes e Furiosos","Breaking Bad","Chaves","Frozen","O Senhor dos Anéis","Homem-Aranha","Auto da Compadecida","La Casa de Papel","Shrek","Matrix","Vingança","Novela das nove","Desenho de sábado","Filme de terror","Documentário","Reality show","Comédia romântica","Série médica"],
+    "Do dia a dia":["Segunda-feira","Fila do banco","Boleto","Wi-Fi caindo","Grupo da família","Ressaca","Academia em janeiro","Trânsito","Chuva sem guarda-chuva","Aniversário surpresa","Primeiro encontro","Prova final","Entrevista de emprego","Mudança de casa","Churrasco em família","Viagem de ônibus","Consulta médica","Cabelo novo","Bateria acabando","Vizinho barulhento","Dia de faxina","Reunião por vídeo","Feriado","Lista do mercado","Peruca","Selfie","Ferrugem","Soneca","Dieta","Boliche"]
+  };
+
+  var ORDEM_CAT = Object.keys(CATEGORIAS);
+
+  /* ---------- ESTADO ---------- */
+  var cfg = {
+    qtd: 5, imps: 1, nomes: [], cats: [], custom: "",
+    dica: true, conhecem: false, misterio: false, caos: false, tempo: 180
+  };
+  var jogo = { jogadores: [], palavra:"", palavraImp:"", categoria:"", ordem:[], vez:0, semImpostor:false };
+  var placar = { civis:0, imps:0 };
+  var usadas = [];
+  var timer = null, restante = 0, rodando = false;
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- PERSISTÊNCIA (opcional, por navegador) ---------- */
+  function salvar(){
+    try{ localStorage.setItem("impostor_cfg", JSON.stringify(cfg)); }catch(e){}
+  }
+  function carregar(){
+    try{
+      var s = localStorage.getItem("impostor_cfg");
+      if(s){ var o = JSON.parse(s); if(o && typeof o === "object"){ for(var k in cfg){ if(o[k] !== undefined) cfg[k] = o[k]; } } }
+    }catch(e){}
+  }
+
+  /* ---------- UTIL ---------- */
+  function embaralhar(a){
+    var b = a.slice();
+    for(var i=b.length-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t=b[i]; b[i]=b[j]; b[j]=t; }
+    return b;
+  }
+  function tela(id){
+    var todas = document.querySelectorAll(".tela");
+    for(var i=0;i<todas.length;i++) todas[i].classList.remove("ativa");
+    $(id).classList.add("ativa");
+    window.scrollTo(0,0);
+  }
+
+  /* ---------- CONFIGURAÇÃO ---------- */
+  function desenhaNomes(){
+    var box = $("lista-nomes");
+    box.innerHTML = "";
+    for(var i=0;i<cfg.qtd;i++){
+      var inp = document.createElement("input");
+      inp.type = "text";
+      inp.maxLength = 18;
+      inp.placeholder = "Jogador " + (i+1);
+      inp.value = cfg.nomes[i] || "";
+      inp.setAttribute("aria-label","Nome do jogador " + (i+1));
+      (function(idx){
+        inp.addEventListener("input", function(e){ cfg.nomes[idx] = e.target.value; salvar(); });
+      })(i);
+      box.appendChild(inp);
+    }
+  }
+  function atualizaContadores(){
+    $("qtd-jog").textContent = cfg.qtd;
+    $("qtd-imp").textContent = cfg.imps;
+    $("menos-jog").disabled = cfg.qtd <= 3;
+    $("mais-jog").disabled = cfg.qtd >= 15;
+    var maxImp = Math.max(1, Math.floor((cfg.qtd-1)/2));
+    if(cfg.imps > maxImp){ cfg.imps = maxImp; $("qtd-imp").textContent = cfg.imps; }
+    $("menos-imp").disabled = cfg.imps <= 1;
+    $("mais-imp").disabled = cfg.imps >= maxImp;
+  }
+  function desenhaChips(){
+    var box = $("chips-cat");
+    box.innerHTML = "";
+    ORDEM_CAT.forEach(function(nome){
+      var b = document.createElement("button");
+      b.className = "chip";
+      b.type = "button";
+      b.textContent = nome;
+      b.setAttribute("aria-pressed", cfg.cats.indexOf(nome) >= 0 ? "true" : "false");
+      b.addEventListener("click", function(){
+        var i = cfg.cats.indexOf(nome);
+        if(i >= 0) cfg.cats.splice(i,1); else cfg.cats.push(nome);
+        b.setAttribute("aria-pressed", i >= 0 ? "false" : "true");
+        salvar();
+      });
+      box.appendChild(b);
+    });
+  }
+  function aplicaCfgNaTela(){
+    $("op-dica").checked = cfg.dica;
+    $("op-conhecem").checked = cfg.conhecem;
+    $("op-misterio").checked = cfg.misterio;
+    $("op-caos").checked = cfg.caos;
+    $("op-tempo").value = String(cfg.tempo);
+    $("palavras-custom").value = cfg.custom || "";
+    atualizaContadores(); desenhaNomes(); desenhaChips();
+  }
+
+  $("menos-jog").addEventListener("click", function(){ if(cfg.qtd>3){ cfg.qtd--; atualizaContadores(); desenhaNomes(); salvar(); } });
+  $("mais-jog").addEventListener("click", function(){ if(cfg.qtd<15){ cfg.qtd++; atualizaContadores(); desenhaNomes(); salvar(); } });
+  $("menos-imp").addEventListener("click", function(){ if(cfg.imps>1){ cfg.imps--; atualizaContadores(); salvar(); } });
+  $("mais-imp").addEventListener("click", function(){ cfg.imps++; atualizaContadores(); salvar(); });
+  ["dica","conhecem","misterio","caos"].forEach(function(k){
+    $("op-"+k).addEventListener("change", function(e){ cfg[k] = e.target.checked; salvar(); });
+  });
+  $("op-tempo").addEventListener("change", function(e){ cfg.tempo = parseInt(e.target.value,10); salvar(); });
+  $("palavras-custom").addEventListener("input", function(e){ cfg.custom = e.target.value; salvar(); });
+
+  /* ---------- SORTEIO DA RODADA ---------- */
+  function sorteiaPalavras(){
+    var lista, cat;
+    var custom = (cfg.custom||"").split(/[\n,]/).map(function(s){return s.trim();}).filter(Boolean);
+    if(custom.length >= 2){
+      lista = custom; cat = "Personalizada";
+    }else{
+      var fonte = cfg.cats.length ? cfg.cats : ORDEM_CAT;
+      cat = fonte[Math.floor(Math.random()*fonte.length)];
+      lista = CATEGORIAS[cat];
+    }
+    var livres = lista.filter(function(p){ return usadas.indexOf(p) < 0; });
+    if(livres.length < 2){ usadas = []; livres = lista.slice(); }
+    var p1 = livres[Math.floor(Math.random()*livres.length)];
+    usadas.push(p1);
+    var outras = livres.filter(function(p){ return p !== p1; });
+    var p2 = outras.length ? outras[Math.floor(Math.random()*outras.length)] : p1;
+    return { categoria: cat, palavra: p1, alternativa: p2 };
+  }
+
+  function montaRodada(){
+    var s = sorteiaPalavras();
+    jogo.categoria = s.categoria;
+    jogo.palavra = s.palavra;
+    jogo.palavraImp = s.alternativa;
+
+    var nImp = cfg.imps;
+    jogo.semImpostor = false;
+    if(cfg.caos && Math.random() < 0.18){ nImp = 0; jogo.semImpostor = true; }
+
+    var indices = embaralhar(function(){ var a=[]; for(var i=0;i<cfg.qtd;i++) a.push(i); return a; }());
+    var impSet = indices.slice(0, nImp);
+
+    jogo.jogadores = [];
+    for(var i=0;i<cfg.qtd;i++){
+      jogo.jogadores.push({
+        nome: (cfg.nomes[i] && cfg.nomes[i].trim()) ? cfg.nomes[i].trim() : ("Jogador " + (i+1)),
+        impostor: impSet.indexOf(i) >= 0
+      });
+    }
+    jogo.vez = 0;
+    jogo.ordem = embaralhar(jogo.jogadores.map(function(j){ return j.nome; }));
+  }
+
+  /* ---------- CARTAS ---------- */
+  var aberta = false;
+  function mostraCartaFechada(){
+    aberta = false;
+    var j = jogo.jogadores[jogo.vez];
+    $("progresso-carta").textContent = "Jogador " + (jogo.vez+1) + " de " + jogo.jogadores.length;
+    $("nome-da-vez").textContent = j.nome;
+    $("carta").classList.remove("aberta");
+    $("carta-fechada").classList.remove("esconde");
+    $("carta-aberta").classList.add("esconde");
+    $("btn-proximo").classList.add("esconde");
+  }
+  function abreCarta(){
+    if(aberta) return;
+    aberta = true;
+    var j = jogo.jogadores[jogo.vez];
+    var papel = $("papel-txt"), palavra = $("palavra-txt"), dica = $("dica-txt");
+    papel.className = "papel";
+    dica.textContent = "";
+
+    if(j.impostor && !cfg.misterio){
+      papel.classList.add("imp");
+      papel.textContent = "Você é o";
+      palavra.textContent = "IMPOSTOR";
+      var partes = [];
+      if(cfg.dica) partes.push("Categoria: " + jogo.categoria);
+      if(cfg.conhecem && cfg.imps > 1){
+        var outros = jogo.jogadores.filter(function(o){ return o.impostor && o.nome !== j.nome; }).map(function(o){ return o.nome; });
+        if(outros.length) partes.push("Com você: " + outros.join(", "));
+      }
+      dica.textContent = partes.join(" · ");
+    }else{
+      papel.classList.add("civ");
+      papel.textContent = "Sua palavra secreta";
+      palavra.textContent = (j.impostor && cfg.misterio) ? jogo.palavraImp : jogo.palavra;
+      if(cfg.dica) dica.textContent = "Categoria: " + jogo.categoria;
+    }
+    $("carta").classList.add("aberta");
+    $("carta-fechada").classList.add("esconde");
+    $("carta-aberta").classList.remove("esconde");
+    $("btn-proximo").classList.remove("esconde");
+    if(navigator.vibrate) { try{ navigator.vibrate(12); }catch(e){} }
+  }
+  $("carta").addEventListener("click", abreCarta);
+  $("carta").addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); abreCarta(); } });
+  $("btn-proximo").addEventListener("click", function(){
+    jogo.vez++;
+    if(jogo.vez >= jogo.jogadores.length) iniciaDiscussao();
+    else mostraCartaFechada();
+  });
+
+  /* ---------- DISCUSSÃO ---------- */
+  function fmt(s){
+    var m = Math.floor(s/60), r = s%60;
+    return m + ":" + (r<10 ? "0"+r : r);
+  }
+  function tick(){
+    if(!rodando) return;
+    restante--;
+    $("relogio").textContent = fmt(Math.max(0,restante));
+    $("relogio").classList.toggle("acabando", restante <= 15);
+    if(restante <= 0){
+      pausa();
+      $("relogio").textContent = "Acabou";
+      if(navigator.vibrate){ try{ navigator.vibrate([200,80,200]); }catch(e){} }
+    }
+  }
+  function pausa(){ rodando = false; clearInterval(timer); $("btn-timer").textContent = "Continuar"; }
+  function segue(){ rodando = true; clearInterval(timer); timer = setInterval(tick,1000); $("btn-timer").textContent = "Pausar"; }
+  $("btn-timer").addEventListener("click", function(){ rodando ? pausa() : segue(); });
+
+  function iniciaDiscussao(){
+    var ol = $("ordem-fala");
+    ol.innerHTML = "";
+    jogo.ordem.forEach(function(nome){
+      var li = document.createElement("li");
+      li.textContent = nome;
+      ol.appendChild(li);
+    });
+    if(cfg.tempo > 0){
+      $("bloco-relogio").classList.remove("esconde");
+      restante = cfg.tempo;
+      $("relogio").textContent = fmt(restante);
+      $("relogio").classList.remove("acabando");
+      segue();
+    }else{
+      $("bloco-relogio").classList.add("esconde");
+    }
+    tela("tela-jogo");
+  }
+  $("btn-votar").addEventListener("click", function(){
+    pausa();
+    var box = $("lista-voto");
+    box.innerHTML = "";
+    jogo.jogadores.forEach(function(j){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = j.nome;
+      b.addEventListener("click", function(){ revela(j); });
+      box.appendChild(b);
+    });
+    tela("tela-voto");
+  });
+  $("btn-pular-voto").addEventListener("click", function(){ revela(null); });
+
+  /* ---------- RESULTADO ---------- */
+  function revela(acusado){
+    var impostores = jogo.jogadores.filter(function(j){ return j.impostor; });
+    $("palavra-final").textContent = jogo.palavra;
+
+    var tags = $("quem-era");
+    tags.innerHTML = "";
+    if(impostores.length === 0){
+      var t = document.createElement("span");
+      t.className = "tag";
+      t.textContent = "Não tinha impostor nessa rodada";
+      tags.appendChild(t);
+    }else{
+      impostores.forEach(function(j){
+        var t = document.createElement("span");
+        t.className = "tag";
+        t.textContent = j.nome + " era impostor";
+        tags.appendChild(t);
+      });
+    }
+
+    $("caixa-chute").classList.add("esconde");
+
+    if(impostores.length === 0){
+      $("titulo-fim").textContent = acusado ? ("Coitado do " + acusado.nome) : "Rodada caótica";
+      $("detalhe-fim").textContent = "Modo caos: todo mundo era civil e ninguém percebeu.";
+      ponto("civis");
+    }else if(acusado && acusado.impostor){
+      $("titulo-fim").textContent = "Pegaram o impostor!";
+      $("detalhe-fim").textContent = acusado.nome + " foi desmascarado.";
+      $("caixa-chute").classList.remove("esconde");
+    }else if(acusado){
+      $("titulo-fim").textContent = "O impostor escapou";
+      $("detalhe-fim").textContent = acusado.nome + " era civil. Os impostores levam essa.";
+      ponto("imps");
+    }else{
+      $("titulo-fim").textContent = "Rodada sem acusação";
+      $("detalhe-fim").textContent = "Ninguém foi votado, nenhum ponto distribuído.";
+      atualizaPlacar();
+    }
+    tela("tela-fim");
+  }
+  function ponto(quem){
+    if(quem === "civis") placar.civis++; else placar.imps++;
+    atualizaPlacar();
+  }
+  function atualizaPlacar(){
+    $("pts-civis").textContent = placar.civis;
+    $("pts-imp").textContent = placar.imps;
+  }
+  $("btn-acertou").addEventListener("click", function(){
+    ponto("imps");
+    $("detalhe-fim").textContent = "Desmascarado, mas acertou a palavra. Ponto para os impostores.";
+    $("caixa-chute").classList.add("esconde");
+  });
+  $("btn-errou").addEventListener("click", function(){
+    ponto("civis");
+    $("detalhe-fim").textContent = "Errou a palavra. Vitória dos civis.";
+    $("caixa-chute").classList.add("esconde");
+  });
+
+  /* ---------- NAVEGAÇÃO ---------- */
+  function novaRodada(){
+    montaRodada();
+    mostraCartaFechada();
+    tela("tela-carta");
+  }
+  $("btn-comecar").addEventListener("click", function(){ salvar(); novaRodada(); });
+  $("btn-nova").addEventListener("click", novaRodada);
+  $("btn-reconfig").addEventListener("click", function(){ aplicaCfgNaTela(); tela("tela-setup"); });
+
+  carregar();
+  aplicaCfgNaTela();
+  atualizaPlacar();
+})();
+</script>
+</body>
+</html>
