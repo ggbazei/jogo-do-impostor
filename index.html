@@ -1,14 +1,266 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#171227"><title>Jogo do Impostor</title><meta name="description" content="Jogo do Impostor para jogar com amigos usando um celular."><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css"></head><body><main class="app">
-<section class="screen active" id="home"><div class="hero"><div class="logo">🎭</div><h1>Jogo do <em>Impostor</em></h1><p>Descubra quem está mentindo.</p></div><button class="btn" data-go="players">📱 Jogar local<small>Um celular para todo mundo</small></button><button class="btn ghost" id="how">❔ Como jogar</button></section>
-<section class="screen" id="players"><header><button class="back" data-go="home">‹</button><div><span>PASSO 1</span><h2>Quem vai jogar?</h2></div></header><p class="muted">Escolha de 3 a 15 jogadores e informe o nome de todos.</p><div class="panel"><div class="row"><div><b>Jogadores</b><small>Quantidade na partida</small></div><div class="stepper"><button id="playerMinus" aria-label="Diminuir jogadores">−</button><strong id="playerCount">5</strong><button id="playerPlus" aria-label="Aumentar jogadores">＋</button></div></div></div><div id="playerList" class="inputs"></div><p id="playerError" class="muted center" hidden>Preencha o nome de todos os jogadores.</p><button class="btn" id="playersContinue">Continuar →</button></section>
-<section class="screen" id="categories"><header><button class="back" data-go="players">‹</button><div><span>PASSO 2</span><h2>Categorias</h2></div></header><p class="muted">Escolha uma ou várias. Sem seleção, vale tudo.</p><div id="categoryGrid" class="cat-grid"></div><details><summary>✍️ Usar minhas palavras</summary><textarea id="customWords" placeholder="Uma palavra por linha ou separada por vírgula"></textarea></details><button class="btn" data-go="settings">Continuar →</button></section>
-<section class="screen" id="settings"><header><button class="back" data-go="categories">‹</button><div><span>PASSO 3</span><h2>Preparar partida</h2></div></header><div class="panel"><div class="row"><div><b>Impostores</b><small>Quantidade na rodada</small></div><div class="stepper"><button id="impMinus">−</button><strong id="impCount">1</strong><button id="impPlus">＋</button></div></div><label>Tempo de discussão<select id="time"><option value="0">Sem cronômetro</option><option value="60">1 minuto</option><option value="120">2 minutos</option><option value="180" selected>3 minutos</option><option value="300">5 minutos</option></select></label></div><details class="panel"><summary>⚙️ Modos e configurações avançadas</summary><div class="advanced-title">Modo de jogo <small>Escolha apenas um</small></div><label class="toggle"><input id="classic" type="radio" name="gameMode" checked><span><b>🎯 Modo Clássico</b><small>Todos recebem a mesma palavra, menos o impostor. O impostor sabe que é o infiltrado e tenta descobrir a palavra.</small></span></label><label class="toggle"><input id="mystery" type="radio" name="gameMode"><span><b>🎭 Modo Mistério</b><small>Ninguém é avisado de que é impostor. O infiltrado recebe uma palavra diferente e precisa perceber sozinho que está jogando com outra palavra.</small></span></label><label class="toggle"><input id="chaos" type="radio" name="gameMode"><span><b>🎲 Modo Caos</b><small>Joga como no modo clássico, mas existe 20% de chance de a rodada não ter nenhum impostor. Ninguém sabe se isso aconteceu.</small></span></label><div class="advanced-title extra">Outras opções</div><label class="toggle"><input id="showCat" type="checkbox" checked><span><b>Impostor vê a categoria</b><small>No modo clássico, o impostor recebe a categoria como pista, mas não vê a palavra secreta.</small></span></label><label class="toggle"><input id="knowEach" type="checkbox"><span><b>Impostores se conhecem</b><small>Quando houver mais de um impostor, cada um verá quem são seus parceiros.</small></span></label></details><button class="btn" id="start">Começar partida</button></section>
-<section class="screen" id="reveal"><div class="progress" id="revealProgress"></div><div class="reveal-card" id="revealCard"><div id="hidden"><div class="avatar">👤</div><h2 id="revealName"></h2><p>Garanta que ninguém esteja olhando.</p><div class="hold">👆 SEGURE PARA VER</div></div><div id="shown" hidden></div></div><p class="muted center">Solte o dedo para esconder a palavra.</p><button class="btn" id="nextReveal" disabled>Já vi, passar o celular →</button></section>
-<section class="screen" id="starter"><div class="hero"><div class="logo">🎲</div><p>Todos viram seus papéis!</p><h2>Quem começa?</h2><div class="starter" id="starterName"></div><p class="muted">Essa pessoa dá a primeira pista.</p></div><button class="btn" id="beginDiscussion">Começar discussão</button></section>
-<section class="screen" id="discussion"><header><div><span>DISCUSSÃO</span><h2>Encontre o impostor</h2></div></header><div class="timer" id="timer">03:00</div><div class="panel"><b>Ordem das pistas</b><ol id="order"></ol></div><button class="btn danger" data-go="votePass">Ir para votação</button></section>
-<section class="screen" id="votePass"><div class="hero"><div class="logo">🗳️</div><h2 id="votePassName"></h2><p>É sua vez de votar. Não deixe ninguém olhar.</p></div><button class="btn" id="openVote">Abrir votação</button></section>
-<section class="screen" id="vote"><header><div><span>VOTO SECRETO</span><h2 id="voterName"></h2></div></header><p class="muted">Quem você acha que é o impostor?</p><div id="voteList" class="vote-list"></div></section>
-<section class="screen" id="result"><div class="hero"><div class="logo" id="resultIcon">👤</div><p>O grupo escolheu...</p><h2 id="accused"></h2><div class="verdict" id="verdict"></div></div><div id="lastChance" class="panel" hidden><b>😈 Última chance</b><p>O impostor pode tentar adivinhar a palavra.</p><input id="guess" placeholder="Digite a palavra"><button class="btn" id="guessBtn">Tentar</button></div><div id="score" class="score"></div><button class="btn" id="newRound">Nova rodada, mesmo grupo</button><button class="btn ghost" data-go="home">Voltar ao início</button></section>
-<dialog id="help"><h2>Como jogar</h2><p>Todos recebem a mesma palavra, menos o impostor. Cada pessoa dá uma pista sem revelar a palavra. Depois, o grupo vota em quem parece estar blefando.</p><p>Se o impostor for descoberto, ainda pode virar o jogo acertando a palavra secreta.</p><button class="btn" id="closeHelp">Entendi</button></dialog>
-</main><script src="app.js"></script><script src="voting-v2.js"></script></body></html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#171227">
+<title>Jogo do Impostor</title>
+<meta name="description" content="Jogo do Impostor para jogar com amigos usando um celular.">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<main class="app">
+<section class="screen active" id="home">
+<div class="hero">
+<div class="logo">🎭</div>
+
+<h1>Jogo do <em>Impostor</em>
+</h1>
+<p>Descubra quem está mentindo.</p>
+</div>
+
+<button class="btn" data-go="players">📱 Jogar local<small>Um celular para todo mundo</small>
+</button>
+<button class="btn ghost" id="how">❔ Como jogar</button>
+</section>
+
+<section class="screen" id="players">
+<header>
+<button class="back" data-go="home">‹</button>
+<div><span>PASSO 1</span>
+<h2>Quem vai jogar?</h2>
+</div>
+
+</header>
+
+<p class="muted">Escolha de 3 a 15 jogadores e informe o nome de todos.</p>
+<div class="panel">
+<div class="row">
+<div><b>Jogadores</b><small>Quantidade na partida</small>
+</div>
+
+<div class="stepper">
+<button id="playerMinus" aria-label="Diminuir jogadores">−</button>
+<strong id="playerCount">5</strong>
+<button id="playerPlus" aria-label="Aumentar jogadores">＋</button>
+</div>
+
+</div>
+
+</div>
+
+<div id="playerList" class="inputs">
+</div>
+
+<p id="playerError" class="muted center" hidden>Preencha o nome de todos os jogadores.</p>
+<button class="btn" id="playersContinue">Continuar →</button>
+</section>
+
+<section class="screen" id="categories">
+<header>
+<button class="back" data-go="players">‹</button>
+<div><span>PASSO 2</span>
+<h2>Categorias</h2>
+</div>
+
+</header>
+
+<p class="muted">Escolha uma ou várias. Sem seleção, vale tudo.</p>
+<div id="categoryGrid" class="cat-grid">
+</div>
+
+<details>
+<summary>✍️ Usar minhas palavras</summary>
+<textarea id="customWords" placeholder="Uma palavra por linha ou separada por vírgula">
+</textarea>
+</details>
+
+<button class="btn" data-go="settings">Continuar →</button>
+</section>
+
+<section class="screen" id="settings">
+<header>
+<button class="back" data-go="categories">‹</button>
+<div><span>PASSO 3</span>
+<h2>Preparar partida</h2>
+</div>
+
+</header>
+
+<div class="panel">
+<div class="row">
+<div><b>Impostores</b><small>Quantidade na rodada</small>
+</div>
+
+<div class="stepper">
+<button id="impMinus">−</button>
+<strong id="impCount">1</strong>
+<button id="impPlus">＋</button>
+</div>
+
+</div>
+
+<label>Tempo de discussão<select id="time">
+<option value="0">Sem cronômetro</option>
+<option value="60">1 minuto</option>
+<option value="120">2 minutos</option>
+<option value="180" selected>3 minutos</option>
+<option value="300">5 minutos</option>
+</select>
+</label>
+</div>
+
+<details class="panel">
+<summary>⚙️ Modos e configurações avançadas</summary>
+<div class="advanced-title">Modo de jogo <small>Escolha apenas um</small>
+</div>
+
+<label class="toggle">
+<input id="classic" type="radio" name="gameMode" checked><span><b>🎯 Modo Clássico</b><small>Todos recebem a mesma palavra, menos o impostor. O impostor sabe que é o infiltrado e tenta descobrir a palavra.</small></span>
+</label>
+<label class="toggle">
+<input id="mystery" type="radio" name="gameMode"><span><b>🎭 Modo Mistério</b><small>Ninguém é avisado de que é impostor. O infiltrado recebe uma palavra diferente e precisa perceber sozinho que está jogando com outra palavra.</small></span>
+</label>
+<label class="toggle">
+<input id="chaos" type="radio" name="gameMode"><span><b>🎲 Modo Caos</b><small>Joga como no modo clássico, mas existe 20% de chance de a rodada não ter nenhum impostor. Ninguém sabe se isso aconteceu.</small></span>
+</label>
+<div class="advanced-title extra">Outras opções</div>
+
+<label class="toggle">
+<input id="showCat" type="checkbox" checked><span><b>Impostor vê a categoria</b><small>No modo clássico, o impostor recebe a categoria como pista, mas não vê a palavra secreta.</small></span>
+</label>
+<label class="toggle">
+<input id="knowEach" type="checkbox"><span><b>Impostores se conhecem</b><small>Quando houver mais de um impostor, cada um verá quem são seus parceiros.</small></span>
+</label>
+</details>
+
+<button class="btn" id="start">Começar partida</button>
+</section>
+
+<section class="screen" id="reveal">
+<div class="progress" id="revealProgress">
+</div>
+
+<div class="reveal-card" id="revealCard">
+<div id="hidden">
+<div class="avatar">👤</div>
+
+<h2 id="revealName">
+</h2>
+<p>Garanta que ninguém esteja olhando.</p>
+<div class="hold">👆 SEGURE PARA VER</div>
+
+</div>
+
+<div id="shown" hidden>
+</div>
+
+</div>
+
+<p class="muted center">Solte o dedo para esconder a palavra.</p>
+<button class="btn" id="nextReveal" disabled>Já vi, passar o celular →</button>
+</section>
+
+<section class="screen" id="starter">
+<div class="hero">
+<div class="logo">🎲</div>
+
+<p>Todos viram seus papéis!</p>
+<h2>Quem começa?</h2>
+<div class="starter" id="starterName">
+</div>
+
+<p class="muted">Essa pessoa dá a primeira pista.</p>
+</div>
+
+<button class="btn" id="beginDiscussion">Começar discussão</button>
+</section>
+
+<section class="screen" id="discussion">
+<header>
+<div><span>DISCUSSÃO</span>
+<h2>Encontre o impostor</h2>
+</div>
+
+</header>
+
+<div class="timer" id="timer">03:00</div>
+
+<div class="panel"><b>Ordem das pistas</b>
+<ol id="order">
+</ol>
+</div>
+
+<button class="btn danger" data-go="votePass">Ir para votação</button>
+</section>
+
+<section class="screen" id="votePass">
+<div class="hero">
+<div class="logo">🗳️</div>
+
+<h2 id="votePassName">
+</h2>
+<p>É sua vez de votar. Não deixe ninguém olhar.</p>
+</div>
+
+<button class="btn" id="openVote">Abrir votação</button>
+</section>
+
+<section class="screen" id="vote">
+<header>
+<div><span>VOTO SECRETO</span>
+<h2 id="voterName">
+</h2>
+</div>
+
+</header>
+
+<p class="muted">Quem você acha que é o impostor?</p>
+<div id="voteList" class="vote-list">
+</div>
+
+</section>
+
+<section class="screen" id="result">
+<div class="hero">
+<div class="logo" id="resultIcon">👤</div>
+
+<p>O grupo escolheu...</p>
+<h2 id="accused">
+</h2>
+<div class="verdict" id="verdict">
+</div>
+
+</div>
+
+<div id="lastChance" class="panel" hidden><b>😈 Última chance</b>
+<p>O impostor pode tentar adivinhar a palavra.</p>
+<input id="guess" placeholder="Digite a palavra">
+<button class="btn" id="guessBtn">Tentar</button>
+</div>
+
+<div id="score" class="score">
+</div>
+
+<button class="btn" id="newRound">Nova rodada, mesmo grupo</button>
+<button class="btn ghost" data-go="home">Voltar ao início</button>
+</section>
+
+<dialog id="help">
+<h2>Como jogar</h2>
+<p>Todos recebem a mesma palavra, menos o impostor. Cada pessoa dá uma pista sem revelar a palavra. Depois, o grupo vota em quem parece estar blefando.</p>
+<p>Se o impostor for descoberto, ainda pode virar o jogo acertando a palavra secreta.</p>
+<button class="btn" id="closeHelp">Entendi</button>
+</dialog>
+
+</main>
+
+<script src="app.js">
+</script>
+<script src="voting-v2.js">
+</script>
+</body>
+
+</html>
