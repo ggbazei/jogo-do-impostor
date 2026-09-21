@@ -218,8 +218,9 @@
 </header>
 
 <p class="muted">Quem você acha que é o impostor?</p>
-<div id="voteList" class="vote-list">
-</div>
+<div id="voteList" class="vote-list"></div>
+<p id="voteHelp" class="muted"></p>
+<button class="btn" id="confirmVote" hidden>Confirmar voto</button>
 
 </section>
 
@@ -241,8 +242,8 @@
 <button class="btn" id="guessBtn">Tentar</button>
 </div>
 
-<div id="score" class="score">
-</div>
+<div id="actualImpostors" class="panel center" hidden></div>
+<div id="score" class="score"></div>
 
 <button class="btn" id="newRound">Nova rodada, mesmo grupo</button>
 <button class="btn ghost" data-go="home">Voltar ao início</button>
@@ -257,10 +258,8 @@
 
 </main>
 
-<script src="app.js">
-</script>
-<script src="voting-v2.js">
-</script>
+<script src="game-data.js"></script>
+<script src="app.js"></script>
 </body>
 
 </html>
