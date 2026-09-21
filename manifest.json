@@ -1,1 +1,9 @@
-{"name":"Jogo do Impostor","short_name":"Impostor","start_url":"./","display":"standalone","background_color":"#171227","theme_color":"#171227","description":"Jogo do Impostor para jogar com amigos no mesmo celular."}
+{
+  "name": "Jogo do Impostor",
+  "short_name": "Impostor",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#171227",
+  "theme_color": "#171227",
+  "description": "Jogo do Impostor para jogar com amigos no mesmo celular."
+}
