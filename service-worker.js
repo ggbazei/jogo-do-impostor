@@ -1,1 +1,44 @@
-const CACHE='impostor-v2-1';const ASSETS=['./','./index.html','./style.css','./app.js','./manifest.json'];self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).then(r=>{let copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request))));
+const CACHE_NAME = "impostor-v2-2";
+
+const APP_FILES = [
+  "./",
+  "./index.html",
+  "./style.css",
+  "./game-data.js",
+  "./app.js",
+  "./manifest.json"
+];
+
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_FILES))
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      caches.keys().then((cacheNames) =>
+        Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName !== CACHE_NAME)
+            .map((cacheName) => caches.delete(cacheName))
+        )
+      )
+    ])
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
+  );
+});
